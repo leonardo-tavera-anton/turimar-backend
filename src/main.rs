@@ -1,9 +1,18 @@
-use axum::{routing::get, Json, Router};
+use axum::{
+    extract::State,
+    routing::{get, post},
+    Json, Router,
+};
 use serde::Serialize;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
 use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
+
+mod db;
+mod error;
+mod handlers;
+mod models;
 
 #[derive(Serialize)]
 struct StatusResponse {
@@ -12,55 +21,49 @@ struct StatusResponse {
     database: String,
 }
 
+// Endpoint para verificar salud del servicio y la conexión a BD
+async fn health_check(State(pool): State<PgPool>) -> Json<StatusResponse> {
+    let db_status = match sqlx::query("SELECT 1").execute(&pool).await {
+        Ok(_) => "Connected".to_string(),
+        Err(e) => format!("Error: {}", e),
+    };
+
+    Json(StatusResponse {
+        status: "ok".to_string(),
+        message: "Servicio backend operativo".to_string(),
+        database: db_status,
+    })
+}
+
 #[tokio::main]
 async fn main() {
-    // Carga variables de entorno si existe .env local
     let _ = dotenvy::dotenv();
 
-    // Obtiene la URL de conexion de Supabase (configurada en Render)
     let database_url = env::var("DATABASE_URL")
         .expect("ERROR: La variable de entorno DATABASE_URL no esta configurada");
 
-    // Intenta conectar al pool de PostgreSQL en Supabase
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await
-        .expect("ERROR: No se pudo conectar a la base de datos de Supabase");
-
+    // Inicializa el pool desde db.rs
+    let pool = db::init_db_pool(&database_url).await;
     println!("✅ Conexion exitosa a Supabase PostgreSQL");
 
-    // Configura CORS para permitir peticiones desde Vercel / Frontend
+    // Configuración de CORS
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
 
-    // Definicion de rutas
+    // Definición de rutas integradas
     let app = Router::new()
+        .route("/", get(|| async { "🚀 API Turi-Mar (Rust + Axum) lista" }))
+        .route("/api/health", get(health_check))
         .route(
-            "/",
-            get(|| async { "🚀 API Turi-Mar (Rust + Axum) lista" }),
+            "/api/v1/destinos",
+            get(handlers::destinos::listar_destinos).post(handlers::destinos::crear_destino),
         )
-        .route(
-            "/api/health",
-            get(move || async move {
-                // Realiza una consulta simple a la BD para verificar salud
-                let db_status = match sqlx::query("SELECT 1").execute(&pool).await {
-                    Ok(_) => "Connected".to_string(),
-                    Err(e) => format!("Error: {}", e),
-                };
+        .layer(cors)
+        .with_state(pool);
 
-                Json(StatusResponse {
-                    status: "ok".to_string(),
-                    message: "Servicio backend operativo".to_string(),
-                    database: db_status,
-                })
-            }),
-        )
-        .layer(cors);
-
-    // Render asigna dinamicamente la variable PORT (por defecto 3000)
+    // Puerto configurado dinámicamente para Render
     let port = env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
         .parse::<u16>()
