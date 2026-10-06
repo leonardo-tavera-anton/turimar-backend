@@ -1,12 +1,12 @@
 use axum::{
     extract::State,
     http::{HeaderValue, Method},
-    response::Html,
     routing::{get, post},
     Json, Router,
 };
 use serde::Serialize;
 use sqlx::PgPool;
+use std::collections::HashMap;
 use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
@@ -23,60 +23,23 @@ struct StatusResponse {
     database: String,
 }
 
-// Endpoint HTML para mostrar un menú interactivo en la raíz
-async fn menu_interactivo() -> Html<&'static str> {
-    Html(r#"
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Turi-Mar API Explorer</title>
-        <style>
-            body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; max-width: 800px; margin: 0 auto; }
-            h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 0.5rem; }
-            .card { background: #1e293b; border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            .endpoint { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #334155; }
-            .endpoint:last-child { border-bottom: none; }
-            .badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
-            .get { background: #0284c7; color: white; }
-            .post { background: #16a34a; color: white; }
-            a.btn { background: #38bdf8; color: #0f172a; padding: 0.4rem 0.8rem; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-            a.btn:hover { background: #7dd3fc; }
-            code { color: #f43f5e; font-size: 1rem; }
-        </style>
-    </head>
-    <body>
-        <h1>🚀 Turi-Mar Backend API Explorer</h1>
-        <p>Servidor Rust + Axum desplegado en Render.</p>
-        
-        <div class="card">
-            <h3>📌 Rutas Disponibles</h3>
-            <div class="endpoint">
-                <div>
-                    <span class="badge get">GET</span>
-                    <code>/api/health</code>
-                </div>
-                <a class="btn" href="/api/health" target="_blank">Probar Endpoint</a>
-            </div>
-            <div class="endpoint">
-                <div>
-                    <span class="badge get">GET</span>
-                    <code>/api/v1/destinos</code>
-                </div>
-                <a class="btn" href="/api/v1/destinos" target="_blank">Probar Endpoint</a>
-            </div>
-            <div class="endpoint">
-                <div>
-                    <span class="badge post">POST</span>
-                    <code>/api/v1/destinos</code>
-                </div>
-                <span style="color: #94a3b8; font-size: 0.85rem;">Requiere cliente HTTP (Postman/Frontend)</span>
-            </div>
-        </div>
-    </body>
-    </html>
-    "#)
+// Menú en formato JSON indexado clásico
+async fn api_index() -> Json<serde_json::Value> {
+    let mut endpoints = HashMap::new();
+    endpoints.insert("health_check", "GET /api/health");
+    endpoints.insert("listar_destinos", "GET /api/v1/destinos");
+    endpoints.insert("crear_destino", "POST /api/v1/destinos");
+
+    serde_json::json!({
+        "name": "Turi-Mar API",
+        "version": "1.0.0",
+        "status": "online",
+        "endpoints": endpoints,
+        "documentation": {
+            "health": "https://turimar-backend.onrender.com/api/health",
+            "destinos": "https://turimar-backend.onrender.com/api/v1/destinos"
+        }
+    })
 }
 
 async fn health_check(State(pool): State<PgPool>) -> Json<StatusResponse> {
@@ -120,7 +83,7 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/", get(menu_interactivo)) // Servir menú en HTML
+        .route("/", get(api_index))
         .route("/api/health", get(health_check))
         .route(
             "/api/v1/destinos",
