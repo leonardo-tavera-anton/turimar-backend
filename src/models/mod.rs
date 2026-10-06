@@ -1,3 +1,4 @@
 pub mod destinos;
-
-pub use destinos::{CrearDestino, Destino};
+pub mod platos;
+pub mod reservas;
+pub mod usuarios;
