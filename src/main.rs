@@ -29,6 +29,12 @@ async fn api_index() -> Json<serde_json::Value> {
     endpoints.insert("health_check", "GET /api/health");
     endpoints.insert("listar_destinos", "GET /api/v1/destinos");
     endpoints.insert("crear_destino", "POST /api/v1/destinos");
+    endpoints.insert("listar_platos", "GET /api/v1/platos");
+    endpoints.insert("crear_plato", "POST /api/v1/platos");
+    endpoints.insert("listar_reservas", "GET /api/v1/reservas");
+    endpoints.insert("crear_reserva", "POST /api/v1/reservas");
+    endpoints.insert("listar_usuarios", "GET /api/v1/usuarios");
+    endpoints.insert("crear_usuario", "POST /api/v1/usuarios");
 
     Json(serde_json::json!({
         "name": "Turi-Mar API",
@@ -37,10 +43,14 @@ async fn api_index() -> Json<serde_json::Value> {
         "endpoints": endpoints,
         "documentation": {
             "health": "https://turimar-backend.onrender.com/api/health",
-            "destinos": "https://turimar-backend.onrender.com/api/v1/destinos"
+            "destinos": "https://turimar-backend.onrender.com/api/v1/destinos",
+            "platos": "https://turimar-backend.onrender.com/api/v1/platos",
+            "reservas": "https://turimar-backend.onrender.com/api/v1/reservas",
+            "usuarios": "https://turimar-backend.onrender.com/api/v1/usuarios"
         }
     }))
 }
+
 async fn health_check(State(pool): State<PgPool>) -> Json<StatusResponse> {
     let db_status = match sqlx::query("SELECT 1").execute(&pool).await {
         Ok(_) => "Connected".to_string(),
@@ -87,6 +97,18 @@ async fn main() {
         .route(
             "/api/v1/destinos",
             get(handlers::destinos::listar_destinos).post(handlers::destinos::crear_destino),
+        )
+        .route(
+            "/api/v1/platos",
+            get(handlers::platos::listar_platos).post(handlers::platos::crear_plato),
+        )
+        .route(
+            "/api/v1/reservas",
+            get(handlers::reservas::listar_reservas).post(handlers::reservas::crear_reserva),
+        )
+        .route(
+            "/api/v1/usuarios",
+            get(handlers::usuarios::listar_usuarios).post(handlers::usuarios::crear_usuario),
         )
         .layer(cors)
         .with_state(pool);
