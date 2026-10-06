@@ -13,6 +13,7 @@ pub struct Usuario {
 pub struct CrearUsuario {
     pub nombre: String,
     pub email: String,
-    pub password_hash: String,
+    #[serde(alias = "password")]
+    pub password_hash: Option<String>,
     pub rol: Option<String>,
 }

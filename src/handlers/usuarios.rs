@@ -20,6 +20,8 @@ pub async fn crear_usuario(
     State(pool): State<PgPool>,
     Json(payload): Json<CrearUsuario>,
 ) -> Result<Json<Usuario>, AppError> {
+    let password_final = payload.password_hash.unwrap_or_else(|| "123456".to_string());
+
     let nuevo = sqlx::query_as::<_, Usuario>(
         r#"
         INSERT INTO usuarios (nombre, email, password_hash, rol)
@@ -29,7 +31,7 @@ pub async fn crear_usuario(
     )
     .bind(&payload.nombre)
     .bind(&payload.email)
-    .bind(&payload.password_hash)
+    .bind(&password_final)
     .bind(&payload.rol)
     .fetch_one(&pool)
     .await?;
