@@ -41,7 +41,6 @@ async fn api_index() -> Json<serde_json::Value> {
         }
     }))
 }
-
 async fn health_check(State(pool): State<PgPool>) -> Json<StatusResponse> {
     let db_status = match sqlx::query("SELECT 1").execute(&pool).await {
         Ok(_) => "Connected".to_string(),
