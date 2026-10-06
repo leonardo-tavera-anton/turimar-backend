@@ -6,12 +6,16 @@ pub struct Destino {
     pub id: i32,
     pub nombre: String,
     pub descripcion: Option<String>,
-    pub precio: f64,
+    pub precio: rust_decimal::Decimal,
+    pub ubicacion: Option<String>,
+    pub imagen_url: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CrearDestino {
     pub nombre: String,
     pub descripcion: Option<String>,
-    pub precio: f64,
+    pub precio: rust_decimal::Decimal,
+    pub ubicacion: Option<String>,
+    pub imagen_url: Option<String>,
 }
