@@ -1,5 +1,6 @@
 use axum::{
     extract::State,
+    http::{HeaderValue, Method},
     routing::{get, post},
     Json, Router,
 };
@@ -46,10 +47,22 @@ async fn main() {
     let pool = db::init_db_pool(&database_url).await;
     println!("✅ Conexion exitosa a Supabase PostgreSQL");
 
-    // Configuración de CORS
+    // Configuración de CORS con permitidos explícitos
+    let allowed_origins = [
+        "https://turimar.xyz".parse::<HeaderValue>().unwrap(),
+        "https://www.turimar.xyz".parse::<HeaderValue>().unwrap(),
+        "http://localhost:5173".parse::<HeaderValue>().unwrap(), // Frontend local Vite
+    ];
+
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
+        .allow_origin(allowed_origins)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::PATCH,
+        ])
         .allow_headers(Any);
 
     // Definición de rutas integradas
