@@ -30,7 +30,7 @@ async fn api_index() -> Json<serde_json::Value> {
     endpoints.insert("listar_destinos", "GET /api/v1/destinos");
     endpoints.insert("crear_destino", "POST /api/v1/destinos");
 
-    serde_json::json!({
+    Json(serde_json::json!({
         "name": "Turi-Mar API",
         "version": "1.0.0",
         "status": "online",
@@ -39,7 +39,7 @@ async fn api_index() -> Json<serde_json::Value> {
             "health": "https://turimar-backend.onrender.com/api/health",
             "destinos": "https://turimar-backend.onrender.com/api/v1/destinos"
         }
-    })
+    }))
 }
 
 async fn health_check(State(pool): State<PgPool>) -> Json<StatusResponse> {
