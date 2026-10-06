@@ -1,4 +1,4 @@
-use axum::{extract::{Path, State}, Json};
+use axum::{extract::State, Json};
 use sqlx::PgPool;
 use crate::{error::AppError, models::destinos::{CrearDestino, Destino}};
 
