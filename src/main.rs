@@ -179,15 +179,21 @@ async fn main() {
         // .route("/api/v1/servicios/:id", get(handlers::obtener_servicio).put(handlers::editar_servicio).delete(handlers::eliminar_servicio))
 
         // Rutas
-        .route("/api/v1/rutas", post(handlers::crear_ruta))
-        .route("/api/v1/rutas/:ruta_id/puntos", post(handlers::agregar_punto_ruta))
-        .route("/api/v1/rutas/usuario/:usuario_id",get(handlers::mis_rutas),)
-        .route("/api/v1/rutas/:ruta_id/puntos",get(handlers::listar_puntos_ruta)
-        .post(handlers::agregar_punto_ruta),
-)
+        .route(
+            "/api/v1/rutas",
+            post(handlers::crear_ruta),
+        )
+        .route(
+            "/api/v1/rutas/usuario/:usuario_id",
+            get(handlers::mis_rutas),
+        )
+        .route(
+            "/api/v1/rutas/:ruta_id/puntos",
+            get(handlers::listar_puntos_ruta)
+                .post(handlers::agregar_punto_ruta),
+        )
         // .route("/api/v1/rutas/:ruta_id/comentarios", post(handlers::agregar_comentario_ruta))
         // .route("/api/v1/rutas/:ruta_id/calificaciones", post(handlers::calificar_ruta))
-
         // Calificaciones Generales
         .route("/api/v1/calificaciones", post(handlers::crear_calificacion_global))
         // .route("/api/v1/calificaciones/:entidad_tipo/:entidad_id", get(handlers::obtener_calificaciones_entidad))
