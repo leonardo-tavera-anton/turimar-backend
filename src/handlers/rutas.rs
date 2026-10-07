@@ -2,6 +2,39 @@ use axum::{extract::{Path, State}, Json};
 use sqlx::PgPool;
 use crate::error::AppError;
 use crate::models::{Ruta, CrearRutaRequest, RutaPunto, CrearPuntoRutaRequest};
+use uuid::Uuid;
+
+pub async fn mis_rutas(
+    State(pool): State<PgPool>,
+    Path(usuario_id): Path<Uuid>,
+) -> Result<Json<Vec<Ruta>>, AppError> {
+    let rutas = sqlx::query_as::<_, Ruta>(
+        "SELECT * FROM rutas
+         WHERE usuario_id = $1
+         ORDER BY created_at DESC"
+    )
+    .bind(usuario_id)
+    .fetch_all(&pool)
+    .await?;
+
+    Ok(Json(rutas))
+}
+
+pub async fn listar_puntos_ruta(
+    State(pool): State<PgPool>,
+    Path(ruta_id): Path<i32>,
+) -> Result<Json<Vec<RutaPunto>>, AppError> {
+    let puntos = sqlx::query_as::<_, RutaPunto>(
+        "SELECT * FROM ruta_puntos
+         WHERE ruta_id = $1
+         ORDER BY orden ASC"
+    )
+    .bind(ruta_id)
+    .fetch_all(&pool)
+    .await?;
+
+    Ok(Json(puntos))
+}
 
 pub async fn crear_ruta(
     State(pool): State<PgPool>,

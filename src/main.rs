@@ -181,6 +181,10 @@ async fn main() {
         // Rutas
         .route("/api/v1/rutas", post(handlers::crear_ruta))
         .route("/api/v1/rutas/:ruta_id/puntos", post(handlers::agregar_punto_ruta))
+        .route("/api/v1/rutas/usuario/:usuario_id",get(handlers::mis_rutas),)
+        .route("/api/v1/rutas/:ruta_id/puntos",get(handlers::listar_puntos_ruta)
+        .post(handlers::agregar_punto_ruta),
+)
         // .route("/api/v1/rutas/:ruta_id/comentarios", post(handlers::agregar_comentario_ruta))
         // .route("/api/v1/rutas/:ruta_id/calificaciones", post(handlers::calificar_ruta))
 
