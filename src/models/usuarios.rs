@@ -1,19 +1,19 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 
-#[derive(Serialize, Deserialize, FromRow, Debug)]
-pub struct Usuario {
-    pub id: i32,
-    pub nombre: String,
+#[derive(Debug, Deserialize)]
+pub struct CrearUsuarioRequest {
     pub email: String,
+    pub password: String,
+    // Si tienes campos adicionales en la base de datos como nombre o rol,
+    // márcalos como opcionales con Option<String> para que no falle si el frontend no los envía:
+    pub nombre: Option<String>,
     pub rol: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CrearUsuario {
-    pub nombre: String,
-    pub email: String,
-    #[serde(alias = "password")]
-    pub password_hash: Option<String>,
-    pub rol: Option<String>,
+pub async fn crear_usuario(
+    State(pool): State<PgPool>,
+    Json(payload): Json<CrearUsuarioRequest>,
+) -> Result<Json<serde_json::Value>, error::AppError> {
+    // Tu lógica de inserción usando payload.email y payload.password
+    // ...
 }
