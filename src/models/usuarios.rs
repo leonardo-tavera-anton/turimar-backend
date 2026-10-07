@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Usuario {
-    pub id: i32,
+    pub id: Uuid, // Cambiado de i32 a Uuid
     pub email: String,
     pub password_hash: String,
 }
