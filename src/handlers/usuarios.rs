@@ -1,14 +1,14 @@
 use axum::{extract::State, Json};
 use sqlx::PgPool;
-
 use crate::error::AppError;
-use crate::models::usuarios::{CrearUsuario, Usuario};
+use crate::models::usuarios::{CrearUsuarioRequest, Usuario};
 
 pub async fn listar_usuarios(
     State(pool): State<PgPool>,
 ) -> Result<Json<Vec<Usuario>>, AppError> {
-    let usuarios = sqlx::query_as::<_, Usuario>(
-        "SELECT id, nombre, email, rol FROM usuarios ORDER BY id ASC",
+    let usuarios = sqlx::query_as!(
+        Usuario,
+        "SELECT id, email, password_hash FROM usuarios"
     )
     .fetch_all(&pool)
     .await?;
@@ -18,23 +18,19 @@ pub async fn listar_usuarios(
 
 pub async fn crear_usuario(
     State(pool): State<PgPool>,
-    Json(payload): Json<CrearUsuario>,
-) -> Result<Json<Usuario>, AppError> {
-    let password_final = payload.password_hash.unwrap_or_else(|| "123456".to_string());
-
-    let nuevo = sqlx::query_as::<_, Usuario>(
-        r#"
-        INSERT INTO usuarios (nombre, email, password_hash, rol)
-        VALUES ($1, $2, $3, COALESCE($4, 'cliente'))
-        RETURNING id, nombre, email, rol
-        "#,
+    Json(payload): Json<CrearUsuarioRequest>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    // Ejemplo de inserción usando payload.email y payload.password
+    let result = sqlx::query!(
+        "INSERT INTO usuarios (email, password_hash) VALUES ($1, $2) RETURNING id",
+        payload.email,
+        payload.password
     )
-    .bind(&payload.nombre)
-    .bind(&payload.email)
-    .bind(&password_final)
-    .bind(&payload.rol)
     .fetch_one(&pool)
     .await?;
 
-    Ok(Json(nuevo))
+    Ok(Json(serde_json::json!({
+        "message": "Usuario creado correctamente",
+        "id": result.id
+    })))
 }
