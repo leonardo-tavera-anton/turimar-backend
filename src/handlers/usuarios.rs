@@ -6,7 +6,7 @@ use crate::models::usuarios::{CrearUsuarioRequest, Usuario};
 pub async fn listar_usuarios(
     State(pool): State<PgPool>,
 ) -> Result<Json<Vec<Usuario>>, AppError> {
-    // Usaren ti runtime query_as imbes nga macro query_as!
+    // Sin la exclamación !
     let usuarios = sqlx::query_as::<_, Usuario>(
         "SELECT id, email, password_hash FROM usuarios"
     )
@@ -20,7 +20,7 @@ pub async fn crear_usuario(
     State(pool): State<PgPool>,
     Json(payload): Json<CrearUsuarioRequest>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    // Usaren ti runtime query imbes nga macro query!
+    // Sin la exclamación !
     let row: (i32,) = sqlx::query_as(
         "INSERT INTO usuarios (email, password_hash) VALUES ($1, $2) RETURNING id"
     )
