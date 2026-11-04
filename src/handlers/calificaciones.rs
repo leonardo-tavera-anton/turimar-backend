@@ -11,33 +11,25 @@ pub async fn crear_calificacion_global(
         return Err(AppError::BadRequest("La calificación debe ser de 1 a 5 estrellas.".into()));
     }
 
-    let calificacion = sqlx::query_as::<_, CalificacionGlobal>(
-        "UPDATE calificaciones
-         SET estrellas = $4, comentario = COALESCE($5, comentario)
-         WHERE usuario_id = $1 AND entidad_tipo = $2 AND entidad_id = $3
-         RETURNING *",
+    let calificacion = match sqlx::query_as::<_, CalificacionGlobal>(
+        "INSERT INTO calificaciones (usuario_id, entidad_tipo, entidad_id, estrellas, comentario)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *",
     )
     .bind(payload.usuario_id)
     .bind(&payload.entidad_tipo)
     .bind(payload.entidad_id)
     .bind(payload.estrellas)
     .bind(&payload.comentario)
-    .fetch_optional(&pool)
-    .await?;
-
-    let calificacion = match calificacion {
-        Some(existing) => existing,
-        None => sqlx::query_as::<_, CalificacionGlobal>(
-            "INSERT INTO calificaciones (usuario_id, entidad_tipo, entidad_id, estrellas, comentario)
-             VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        )
-        .bind(payload.usuario_id)
-        .bind(&payload.entidad_tipo)
-        .bind(payload.entidad_id)
-        .bind(payload.estrellas)
-        .bind(&payload.comentario)
-        .fetch_one(&pool)
-        .await?,
+    .fetch_one(&pool)
+    .await
+    {
+        Ok(rating) => rating,
+        Err(sqlx::Error::Database(error)) if error.code().as_deref() == Some("23505") => {
+            return Err(AppError::Conflict(
+                "Ya calificaste este local. Solo se permite una calificación por persona.".into(),
+            ));
+        }
+        Err(error) => return Err(AppError::DatabaseError(error)),
     };
 
     Ok(Json(calificacion))

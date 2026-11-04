@@ -5,6 +5,7 @@ pub enum AppError {
     DatabaseError(sqlx::Error),
     NotFound(String),
     BadRequest(String),
+    Conflict(String),
 }
 
 impl IntoResponse for AppError {
@@ -13,6 +14,7 @@ impl IntoResponse for AppError {
             AppError::DatabaseError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, m),
             AppError::BadRequest(m) => (StatusCode::BAD_REQUEST, m),
+            AppError::Conflict(m) => (StatusCode::CONFLICT, m),
         };
         (status, Json(json!({ "error": msg }))).into_response()
     }
