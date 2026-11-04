@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, State},
     Json,
 };
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 use crate::error::AppError;
@@ -19,8 +19,8 @@ pub async fn crear_ruta(
 ) -> Result<Json<Ruta>, AppError> {
     let ruta = sqlx::query_as::<_, Ruta>(
         "INSERT INTO rutas
-            (usuario_id, titulo, descripcion, categoria, filtros, es_publica)
-         VALUES ($1, $2, $3, $4, $5, $6)
+            (usuario_id, titulo, descripcion, categoria, filtros, es_publica, mostrar_propietario)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *",
     )
     .bind(payload.usuario_id)
@@ -29,6 +29,7 @@ pub async fn crear_ruta(
     .bind(&payload.categoria)
     .bind(&payload.filtros)
     .bind(payload.es_publica.unwrap_or(true))
+    .bind(payload.mostrar_propietario.unwrap_or(true))
     .fetch_one(&pool)
     .await?;
 
@@ -90,4 +91,40 @@ pub async fn listar_puntos_ruta(
     .await?;
 
     Ok(Json(puntos))
+}
+pub async fn rutas_publicas(
+    State(pool): State<PgPool>,
+) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+    let rutas = sqlx::query(
+        "SELECT r.id, r.usuario_id, r.titulo, r.descripcion, r.categoria, r.filtros,
+                r.es_publica, r.mostrar_propietario, r.created_at,
+                CASE WHEN r.mostrar_propietario THEN u.nombre ELSE NULL END AS propietario_nombre,
+                COALESCE((
+                    SELECT json_agg(to_jsonb(p) ORDER BY p.orden)
+                    FROM ruta_puntos p
+                    WHERE p.ruta_id = r.id
+                ), '[]'::json) AS puntos
+         FROM rutas r
+         LEFT JOIN usuarios u ON u.id = r.usuario_id
+         WHERE r.es_publica = TRUE
+         ORDER BY r.created_at DESC"
+    )
+    .fetch_all(&pool)
+    .await?;
+
+    let rutas = rutas.into_iter().map(|row| serde_json::json!({
+        "id": row.get::<i32, _>("id"),
+        "usuario_id": row.get::<Uuid, _>("usuario_id"),
+        "titulo": row.get::<String, _>("titulo"),
+        "descripcion": row.get::<Option<String>, _>("descripcion"),
+        "categoria": row.get::<Option<String>, _>("categoria"),
+        "filtros": row.get::<Option<String>, _>("filtros"),
+        "es_publica": row.get::<bool, _>("es_publica"),
+        "mostrar_propietario": row.get::<bool, _>("mostrar_propietario"),
+        "created_at": row.get::<Option<chrono::DateTime<chrono::Utc>>, _>("created_at"),
+        "propietario_nombre": row.get::<Option<String>, _>("propietario_nombre"),
+        "puntos": row.get::<serde_json::Value, _>("puntos"),
+    })).collect::<Vec<_>>();
+
+    Ok(Json(rutas))
 }

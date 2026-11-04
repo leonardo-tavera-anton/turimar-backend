@@ -11,6 +11,7 @@ pub struct Ruta {
     pub categoria: Option<String>,
     pub filtros: Option<String>,
     pub es_publica: Option<bool>,
+    pub mostrar_propietario: Option<bool>,
     pub created_at: Option<DateTime<Utc>>,
 }
 
@@ -22,6 +23,7 @@ pub struct CrearRutaRequest {
     pub categoria: Option<String>,
     pub filtros: Option<String>,
     pub es_publica: Option<bool>,
+    pub mostrar_propietario: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]

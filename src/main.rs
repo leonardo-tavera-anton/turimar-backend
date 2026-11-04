@@ -181,7 +181,7 @@ async fn main() {
         // Rutas
         .route(
             "/api/v1/rutas",
-            post(handlers::crear_ruta),
+            get(handlers::rutas_publicas).post(handlers::crear_ruta),
         )
         .route(
             "/api/v1/rutas/usuario/:usuario_id",
