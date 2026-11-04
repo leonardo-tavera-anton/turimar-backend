@@ -196,6 +196,7 @@ async fn main() {
         // .route("/api/v1/rutas/:ruta_id/calificaciones", post(handlers::calificar_ruta))
         // Calificaciones Generales
         .route("/api/v1/calificaciones", post(handlers::crear_calificacion_global))
+        .route("/api/v1/calificaciones/local/:local_id", get(handlers::resumen_calificacion_local))
         // .route("/api/v1/calificaciones/:entidad_tipo/:entidad_id", get(handlers::obtener_calificaciones_entidad))
 
         // Dashboard Propietario

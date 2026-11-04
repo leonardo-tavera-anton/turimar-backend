@@ -1,5 +1,5 @@
 use axum::{extract::{Path, State}, Json};
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 use crate::error::AppError;
 use crate::models::{Local, CrearLocalRequest};
@@ -30,10 +30,23 @@ pub async fn crear_local(
     Ok(Json(local))
 }
 
-pub async fn listar_locales(State(pool): State<PgPool>) -> Result<Json<Vec<Local>>, AppError> {
-    let locales = sqlx::query_as::<_, Local>("SELECT * FROM locales WHERE activo = true")
-        .fetch_all(&pool)
-        .await?;
+pub async fn listar_locales(State(pool): State<PgPool>) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+    let locales = sqlx::query(
+        "SELECT to_jsonb(l) || jsonb_build_object(
+            'propietario_nombre', u.nombre,
+            'promedio_estrellas', COALESCE(AVG(c.estrellas)::float8, 0),
+            'cantidad_calificaciones', COUNT(c.id)
+         ) AS local
+         FROM locales l
+         LEFT JOIN usuarios u ON u.id = l.usuario_id
+         LEFT JOIN calificaciones c ON c.entidad_tipo = 'local' AND c.entidad_id = l.id
+         WHERE l.activo = true
+         GROUP BY l.id, u.nombre
+         ORDER BY l.created_at DESC"
+    )
+    .fetch_all(&pool)
+    .await?;
+    let locales = locales.into_iter().map(|row| row.get::<serde_json::Value, _>("local")).collect();
     Ok(Json(locales))
 }
 

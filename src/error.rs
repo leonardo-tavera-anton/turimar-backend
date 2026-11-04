@@ -4,6 +4,7 @@ use serde_json::json;
 pub enum AppError {
     DatabaseError(sqlx::Error),
     NotFound(String),
+    BadRequest(String),
 }
 
 impl IntoResponse for AppError {
@@ -11,6 +12,7 @@ impl IntoResponse for AppError {
         let (status, msg) = match self {
             AppError::DatabaseError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             AppError::NotFound(m) => (StatusCode::NOT_FOUND, m),
+            AppError::BadRequest(m) => (StatusCode::BAD_REQUEST, m),
         };
         (status, Json(json!({ "error": msg }))).into_response()
     }
